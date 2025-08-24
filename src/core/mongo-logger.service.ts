@@ -27,17 +27,30 @@ export class MongoLoggerService implements OnModuleDestroy {
 
   async logError(
     collection: string,
-    error: Error,
+    error: unknown,
     metadata?: Record<string, unknown>,
   ): Promise<void> {
-    const logEntry: LogEntry = {
-      timestamp: new Date(),
-      level: 'error',
-      message: error.message,
-      stack: error.stack,
-      metadata,
-      collection,
-    };
+    let logEntry: LogEntry;
+
+    if (error instanceof Error) {
+      logEntry = {
+        timestamp: new Date(),
+        level: 'error',
+        message: error.message,
+        stack: error.stack,
+        metadata,
+        collection,
+      };
+    } else {
+      logEntry = {
+        timestamp: new Date(),
+        level: 'error',
+        message: 'An unknown error occurred',
+        errorDetails: String(error),
+        metadata,
+        collection,
+      };
+    }
 
     await this.batchManager.addToBatch(logEntry);
   }

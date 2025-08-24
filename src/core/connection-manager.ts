@@ -160,7 +160,9 @@ export class ConnectionManager implements OnModuleDestroy {
     this.status = ConnectionStatus.RECONNECTING;
     this.reconnectAttempts++;
     this.metrics.reconnects++;
-    const delay = baseDelay * Math.pow(2, this.reconnectAttempts - 1);
+    const exponentialDelay =
+      baseDelay * Math.pow(2, this.reconnectAttempts - 1);
+    const delay = Math.min(exponentialDelay, 30000); // Cap delay at 30 seconds
 
     this.logger.log(
       `Attempting reconnection ${this.reconnectAttempts}/${maxRetries} in ${delay}ms`,

@@ -76,11 +76,14 @@ export class LogInterceptor implements NestInterceptor {
           status: 'error',
           duration: endTime - startTime,
           endTime: new Date(endTime),
-          error: {
-            message: error.message,
-            stack: error.stack,
-            name: error.name,
-          },
+          error:
+            error instanceof Error
+              ? {
+                  message: error.message,
+                  stack: error.stack,
+                  name: error.name,
+                }
+              : { details: String(error) },
         };
 
         this.mongoLogger.log(logOptions.collection || 'method-logs', logData);

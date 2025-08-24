@@ -223,7 +223,7 @@ export class BatchManager implements OnModuleDestroy {
           originalLog: log,
           errorDetails: {
             message: 'Max retries reached for temporary error',
-            error: error.message,
+            error: error instanceof Error ? error.message : String(error),
           },
           failedAt: new Date(),
           sourceCollection: collectionName,
