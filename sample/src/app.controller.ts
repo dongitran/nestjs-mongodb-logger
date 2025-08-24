@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body } from '@nestjs/common';
+import { Controller, Post, Body } from '@nestjs/common';
 import { AppService } from './app.service';
 
 @Controller()
@@ -27,5 +27,10 @@ export class AppController {
   async triggerBatchFlush(): Promise<string> {
     await this.appService.triggerBatchFlush();
     return 'Batch log process triggered';
+  }
+
+  @Post('stress')
+  stressTest() {
+    return this.appService.runStressTest();
   }
 }

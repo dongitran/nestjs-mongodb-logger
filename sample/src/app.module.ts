@@ -6,7 +6,9 @@ import { MongoLoggerModule } from 'nestjs-mongodb-logger';
 
 @Module({
   imports: [
-    ConfigModule.forRoot(),
+    ConfigModule.forRoot({
+      envFilePath: '.env',
+    }),
     MongoLoggerModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
@@ -14,6 +16,9 @@ import { MongoLoggerModule } from 'nestjs-mongodb-logger';
         defaultCollection: 'logs',
         batchSize: 10,
         flushInterval: 1000,
+        connectionOptions: {
+          maxPoolSize: 100, // Increase pool size for stress testing
+        },
       }),
       inject: [ConfigService],
     }),

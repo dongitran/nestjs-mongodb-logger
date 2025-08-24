@@ -3,9 +3,6 @@ import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
 import { AppModule } from './../src/app.module';
 import { MongoClient } from 'mongodb';
-import * as dotenv from 'dotenv';
-
-dotenv.config({ path: '.env' });
 
 describe('Logging (e2e)', () => {
   let app: INestApplication;
@@ -28,8 +25,12 @@ describe('Logging (e2e)', () => {
   }, 30000);
 
   afterAll(async () => {
-    await mongoClient.close();
-    await app.close();
+    if (mongoClient) {
+      await mongoClient.close();
+    }
+    if (app) {
+      await app.close();
+    }
   }, 30000);
 
   const waitForLogs = (ms: number) =>
@@ -96,4 +97,22 @@ describe('Logging (e2e)', () => {
     const logs = await db.collection('batch-logs').find({}).toArray();
     expect(logs.length).toBeGreaterThanOrEqual(10);
   });
+
+  it('should handle a high volume of logs without loss', async () => {
+    const LOG_VOLUME = 500;
+    const collectionName = 'stress-test-logs';
+    const db = mongoClient.db('nestjs-mongodb-logger-test');
+
+    // Clear collection before test
+    await db.collection(collectionName).deleteMany({});
+
+    // Trigger the stress test endpoint
+    await request(app.getHttpServer()).post('/stress').expect(201);
+
+    // Wait for a period to allow the batch manager to flush all logs
+    await new Promise((resolve) => setTimeout(resolve, 6000));
+
+    const logCount = await db.collection(collectionName).countDocuments();
+    expect(logCount).toBe(LOG_VOLUME);
+  }, 20000); // Increase timeout for this test
 });

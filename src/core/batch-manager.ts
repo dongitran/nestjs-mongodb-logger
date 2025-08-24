@@ -30,6 +30,7 @@ export class BatchManager implements OnModuleDestroy {
   private readonly batches = new Map<string, CollectionBatch>();
   private flushTimer: NodeJS.Timeout | null = null;
   private isShuttingDown = false;
+  private readonly flushingCollections = new Set<string>();
 
   private readonly batchSize: number;
   private readonly flushInterval: number;
@@ -150,22 +151,30 @@ export class BatchManager implements OnModuleDestroy {
   }
 
   private async flushCollection(collectionName: string): Promise<void> {
-    const batch = this.batches.get(collectionName);
-    if (!batch || batch.entries.length === 0) {
+    if (this.flushingCollections.has(collectionName)) {
+      this.logger.debug(`Flush for ${collectionName} already in progress.`);
       return;
     }
 
-    const entries = [...batch.entries];
-    const batchSize = entries.length;
-    batch.entries = [];
-    batch.lastFlush = Date.now();
-    batch.memorySize = 0;
+    const batchToFlush = this.batches.get(collectionName);
+    if (!batchToFlush || batchToFlush.entries.length === 0) {
+      return;
+    }
+
+    // Atomic Swap: Replace the current batch with a new empty one immediately.
+    this.batches.set(collectionName, {
+      entries: [],
+      lastFlush: Date.now(),
+      memorySize: 0,
+    });
+
+    this.flushingCollections.add(collectionName);
 
     try {
       const db = await this.connectionManager.getDatabase();
       const collection = db.collection(collectionName);
 
-      const cleanEntries = entries.map(entry => {
+      const cleanEntries = batchToFlush.entries.map(entry => {
         const { _batchId: _, _retryCount: __, ...cleanEntry } = entry;
         return cleanEntry;
       });
@@ -174,24 +183,28 @@ export class BatchManager implements OnModuleDestroy {
 
       this.metrics.totalBatchesFlushed++;
       this.metrics.lastFlushTime = new Date();
-      this.logger.debug(`Flushed ${batchSize} entries to ${collectionName}`);
+      this.logger.debug(
+        `Flushed ${batchToFlush.entries.length} entries to ${collectionName}`,
+      );
       this.retries.delete(collectionName);
     } catch (error) {
       this.metrics.totalFlushFailures++;
-      await this.handleFlushError(collectionName, entries, error);
+      await this.handleFlushError(collectionName, batchToFlush.entries, error);
+    } finally {
+      this.flushingCollections.delete(collectionName);
     }
   }
 
   private async handleFlushError(
     collectionName: string,
-    batch: BatchLogEntry[],
+    failedEntries: BatchLogEntry[],
     error: any,
   ): Promise<void> {
     this.logger.error(`Failed to flush batch to ${collectionName}`, error);
 
     if (error?.name === 'BulkWriteError' && error?.writeErrors) {
       const failedIndexes = new Set(error.writeErrors.map((e: any) => e.index));
-      const dlqEntries = batch
+      const dlqEntries = failedEntries
         .filter((_, index) => failedIndexes.has(index))
         .map(failedLog => ({
           originalLog: failedLog,
@@ -209,10 +222,18 @@ export class BatchManager implements OnModuleDestroy {
       const currentRetries = this.retries.get(collectionName) || 0;
       if (currentRetries < this.maxRetries) {
         this.retries.set(collectionName, currentRetries + 1);
-        this.metrics.totalRetries++; // Increment the global retry metric
-        const existingBuffer = this.batches.get(collectionName)?.entries || [];
-        this.batches.get(collectionName)!.entries =
-          batch.concat(existingBuffer);
+        this.metrics.totalRetries++;
+
+        const liveBatch = this.batches.get(collectionName);
+        if (liveBatch) {
+          liveBatch.entries.unshift(...failedEntries);
+          liveBatch.memorySize +=
+            failedEntries.reduce(
+              (sum, entry) => sum + this.estimateEntrySize(entry),
+              0,
+            ) || 0;
+        }
+
         this.logger.warn(
           `Retrying flush for ${collectionName}. Attempt ${currentRetries + 1}`,
         );
@@ -220,7 +241,7 @@ export class BatchManager implements OnModuleDestroy {
         this.logger.error(
           `Max retries reached for ${collectionName}. Moving batch to DLQ.`,
         );
-        const dlqEntries = batch.map(log => ({
+        const dlqEntries = failedEntries.map(log => ({
           originalLog: log,
           errorDetails: {
             message: 'Max retries reached for temporary error',

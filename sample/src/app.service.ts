@@ -32,4 +32,16 @@ export class AppService {
     }
     await Promise.all(promises);
   }
+
+  async runStressTest(): Promise<void> {
+    const promises = [];
+    for (let i = 0; i < 500; i++) {
+      promises.push(
+        this.logger.log('stress-test-logs', {
+          message: `Stress test log ${i}`,
+        }),
+      );
+    }
+    await Promise.all(promises);
+  }
 }
