@@ -41,13 +41,6 @@ export class MongoLoggerConfigDto {
 
   @IsOptional()
   @IsNumber()
-  @Min(0)
-  @Max(20)
-  @Transform(({ value }) => parseInt(value, 10))
-  retryAttempts?: number;
-
-  @IsOptional()
-  @IsNumber()
   @Min(100)
   @Max(60000)
   @Transform(({ value }) => parseInt(value, 10))
@@ -96,7 +89,7 @@ export class ConfigValidator {
       batchSize: config.batchSize || 500,
       flushInterval: config.flushInterval || 5000,
       maxMemoryUsage: config.maxMemoryUsage || 100,
-      retryAttempts: config.retryAttempts || 5,
+
       retryDelay: config.retryDelay || 1000,
       enableMetrics:
         config.enableMetrics !== undefined ? config.enableMetrics : true,
@@ -134,9 +127,7 @@ export class ConfigValidator {
       maxMemoryUsage: process.env.MONGODB_LOGGER_MAX_MEMORY
         ? parseInt(process.env.MONGODB_LOGGER_MAX_MEMORY, 10)
         : undefined,
-      retryAttempts: process.env.MONGODB_LOGGER_RETRY_ATTEMPTS
-        ? parseInt(process.env.MONGODB_LOGGER_RETRY_ATTEMPTS, 10)
-        : undefined,
+
       retryDelay: process.env.MONGODB_LOGGER_RETRY_DELAY
         ? parseInt(process.env.MONGODB_LOGGER_RETRY_DELAY, 10)
         : undefined,

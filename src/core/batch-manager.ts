@@ -3,7 +3,6 @@ import { MongoLoggerConfig } from '../interfaces/mongo-logger-config.interface';
 import { LogEntry, BatchLogEntry } from '../interfaces/log-entry.interface';
 import { ConnectionManager } from './connection-manager';
 import { v4 as uuidv4 } from 'uuid';
-import { inspect } from 'util';
 
 const MONGO_LOGGER_CONFIG = 'MONGO_LOGGER_CONFIG';
 
@@ -35,7 +34,6 @@ export class BatchManager implements OnModuleDestroy {
   private readonly batchSize: number;
   private readonly flushInterval: number;
   private readonly maxMemoryUsage: number;
-  private readonly maxRetries: number;
   private readonly retries = new Map<string, number>();
 
   private metrics: BatchMetrics = {
@@ -56,7 +54,6 @@ export class BatchManager implements OnModuleDestroy {
     this.batchSize = config.batchSize || 500;
     this.flushInterval = config.flushInterval || 5000;
     this.maxMemoryUsage = (config.maxMemoryUsage || 100) * 1024 * 1024;
-    this.maxRetries = config.maxRetries || 3;
 
     this.startFlushTimer();
   }
@@ -220,39 +217,22 @@ export class BatchManager implements OnModuleDestroy {
       }
     } else {
       const currentRetries = this.retries.get(collectionName) || 0;
-      if (currentRetries < this.maxRetries) {
-        this.retries.set(collectionName, currentRetries + 1);
-        this.metrics.totalRetries++;
+      this.retries.set(collectionName, currentRetries + 1);
+      this.metrics.totalRetries++;
 
-        const liveBatch = this.batches.get(collectionName);
-        if (liveBatch) {
-          liveBatch.entries.unshift(...failedEntries);
-          liveBatch.memorySize +=
-            failedEntries.reduce(
-              (sum, entry) => sum + this.estimateEntrySize(entry),
-              0,
-            ) || 0;
-        }
-
-        this.logger.warn(
-          `Retrying flush for ${collectionName}. Attempt ${currentRetries + 1}`,
-        );
-      } else {
-        this.logger.error(
-          `Max retries reached for ${collectionName}. Moving batch to DLQ.`,
-        );
-        const dlqEntries = failedEntries.map(log => ({
-          originalLog: log,
-          errorDetails: {
-            message: 'Max retries reached for temporary error',
-            error: inspect(error),
-          },
-          failedAt: new Date(),
-          sourceCollection: collectionName,
-        }));
-        await this.sendToDlq(collectionName, dlqEntries);
-        this.retries.delete(collectionName);
+      const liveBatch = this.batches.get(collectionName);
+      if (liveBatch) {
+        liveBatch.entries.unshift(...failedEntries);
+        liveBatch.memorySize +=
+          failedEntries.reduce(
+            (sum, entry) => sum + this.estimateEntrySize(entry),
+            0,
+          ) || 0;
       }
+
+      this.logger.warn(
+        `Retrying flush for ${collectionName}. Attempt ${currentRetries + 1}`,
+      );
     }
   }
 

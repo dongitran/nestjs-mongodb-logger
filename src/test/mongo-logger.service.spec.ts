@@ -13,7 +13,6 @@ describe('MongoLoggerService', () => {
     batchSize: 100,
     flushInterval: 1000,
     maxMemoryUsage: 50,
-    retryAttempts: 3,
     retryDelay: 500,
     enableMetrics: true,
     logLevel: 'info',

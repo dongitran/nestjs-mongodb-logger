@@ -9,7 +9,6 @@ describe('ConfigValidator', () => {
         batchSize: 500,
         flushInterval: 5000,
         maxMemoryUsage: 100,
-        retryAttempts: 5,
         retryDelay: 1000,
         enableMetrics: true,
         logLevel: 'info',
@@ -39,7 +38,9 @@ describe('ConfigValidator', () => {
         batchSize: 0,
       };
 
-      expect(() => ConfigValidator.validate(config as MongoLoggerConfig)).toThrow();
+      expect(() =>
+        ConfigValidator.validate(config as MongoLoggerConfig),
+      ).toThrow();
     });
 
     it('should throw error for invalid flush interval', () => {
@@ -48,36 +49,41 @@ describe('ConfigValidator', () => {
         flushInterval: 50,
       };
 
-      expect(() => ConfigValidator.validate(config as MongoLoggerConfig)).toThrow();
-    });
-
-    it('should throw error for invalid retry attempts', () => {
-      const config = {
-        uri: 'mongodb://localhost:27017/test',
-        retryAttempts: 25,
-      };
-
-      expect(() => ConfigValidator.validate(config as MongoLoggerConfig)).toThrow();
+      expect(() =>
+        ConfigValidator.validate(config as MongoLoggerConfig),
+      ).toThrow();
     });
   });
 
   describe('validateUri', () => {
     it('should validate valid MongoDB URI', () => {
-      expect(() => ConfigValidator.validateUri('mongodb://localhost:27017/test')).not.toThrow();
-      expect(() => ConfigValidator.validateUri('mongodb+srv://cluster.mongodb.net/test')).not.toThrow();
+      expect(() =>
+        ConfigValidator.validateUri('mongodb://localhost:27017/test'),
+      ).not.toThrow();
+      expect(() =>
+        ConfigValidator.validateUri('mongodb+srv://cluster.mongodb.net/test'),
+      ).not.toThrow();
     });
 
     it('should throw error for empty URI', () => {
-      expect(() => ConfigValidator.validateUri('')).toThrow('MongoDB URI is required');
+      expect(() => ConfigValidator.validateUri('')).toThrow(
+        'MongoDB URI is required',
+      );
     });
 
     it('should throw error for invalid URI format', () => {
-      expect(() => ConfigValidator.validateUri('invalid-uri')).toThrow('Invalid MongoDB URI format');
-      expect(() => ConfigValidator.validateUri('http://localhost:27017/test')).toThrow('Invalid MongoDB URI format');
+      expect(() => ConfigValidator.validateUri('invalid-uri')).toThrow(
+        'Invalid MongoDB URI format',
+      );
+      expect(() =>
+        ConfigValidator.validateUri('http://localhost:27017/test'),
+      ).toThrow('Invalid MongoDB URI format');
     });
 
     it('should throw error for malformed URI', () => {
-      expect(() => ConfigValidator.validateUri('mongodb://[invalid')).toThrow('Invalid MongoDB URI format');
+      expect(() => ConfigValidator.validateUri('mongodb://[invalid')).toThrow(
+        'Invalid MongoDB URI format',
+      );
     });
   });
 

@@ -22,7 +22,6 @@ describe('ConnectionManager', () => {
 
   const mockConfig: MongoLoggerConfig = {
     uri: 'mongodb://localhost:27017/test',
-    retryAttempts: 3,
     retryDelay: 1000,
   };
 

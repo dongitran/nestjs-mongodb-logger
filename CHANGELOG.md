@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.8] - 2025-08-24
+
+### Removed
+
+- **Retry Limit**: Removed the maximum retry limit for MongoDB connection and batch flushing to ensure the logger continuously attempts to reconnect and send logs without giving up.
+
 ## [1.0.7] - 2025-08-24
 
 ### Fixed

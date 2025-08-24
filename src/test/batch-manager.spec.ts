@@ -13,7 +13,6 @@ describe('BatchManager', () => {
     batchSize: 3,
     flushInterval: 100,
     maxMemoryUsage: 1,
-    retryAttempts: 2,
     retryDelay: 100,
   };
 

@@ -6,13 +6,11 @@ export interface MongoLoggerConfig {
   batchSize?: number;
   flushInterval?: number;
   maxMemoryUsage?: number;
-  retryAttempts?: number;
   retryDelay?: number;
   connectionOptions?: MongoClientOptions;
   enableMetrics?: boolean;
   logLevel?: 'error' | 'warn' | 'info';
   gracefulShutdownTimeout?: number;
-  maxRetries?: number;
 }
 
 import { ModuleMetadata } from '@nestjs/common';

@@ -149,13 +149,7 @@ export class ConnectionManager implements OnModuleDestroy {
   private async handleReconnection(): Promise<void> {
     if (this.status !== ConnectionStatus.DISCONNECTED) return;
 
-    const maxRetries = this.config.retryAttempts || 5;
     const baseDelay = this.config.retryDelay || 1000;
-
-    if (this.reconnectAttempts >= maxRetries) {
-      this.logger.error('Max reconnection attempts reached');
-      return;
-    }
 
     this.status = ConnectionStatus.RECONNECTING;
     this.reconnectAttempts++;
@@ -165,7 +159,7 @@ export class ConnectionManager implements OnModuleDestroy {
     const delay = Math.min(exponentialDelay, 30000); // Cap delay at 30 seconds
 
     this.logger.log(
-      `Attempting reconnection ${this.reconnectAttempts}/${maxRetries} in ${delay}ms`,
+      `Attempting reconnection ${this.reconnectAttempts} in ${delay}ms`,
     );
 
     setTimeout(async () => {
@@ -174,6 +168,8 @@ export class ConnectionManager implements OnModuleDestroy {
       } catch (error) {
         this.logger.error('Reconnection failed', error);
         this.status = ConnectionStatus.DISCONNECTED;
+        // Continue retrying indefinitely
+        this.handleReconnection();
       }
     }, delay);
   }
