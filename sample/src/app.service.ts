@@ -5,8 +5,8 @@ import { MongoLoggerService } from 'nestjs-mongodb-logger';
 export class AppService {
   constructor(private readonly logger: MongoLoggerService) {}
 
-  async logInfo(message: string): Promise<void> {
-    await this.logger.log('info-logs', { level: 'info', message });
+  async logInfo(message: string, collection = 'info-logs'): Promise<void> {
+    await this.logger.log(collection, { level: 'info', message });
   }
 
   async logError(errorMessage: string): Promise<void> {

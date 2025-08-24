@@ -103,14 +103,26 @@ describe('Logging (e2e)', () => {
     const collectionName = 'stress-test-logs';
     const db = mongoClient.db('nestjs-mongodb-logger-test');
 
-    // Clear collection before test
     await db.collection(collectionName).deleteMany({});
 
-    // Trigger the stress test endpoint
     await request(app.getHttpServer()).post('/stress').expect(201);
 
-    // Wait for a period to allow the batch manager to flush all logs
-    await new Promise((resolve) => setTimeout(resolve, 6000));
+    await waitForLogs(6000);
+
+    const logCount = await db.collection(collectionName).countDocuments();
+    expect(logCount).toBe(LOG_VOLUME);
+  }, 20000); // Increase timeout for this test
+
+  it('should handle a high volume of info logs via a dedicated endpoint', async () => {
+    const LOG_VOLUME = 500;
+    const collectionName = 'stress-info-logs';
+    const db = mongoClient.db('nestjs-mongodb-logger-test');
+
+    await db.collection(collectionName).deleteMany({});
+
+    await request(app.getHttpServer()).post('/stress-info').expect(201);
+
+    await waitForLogs(6000);
 
     const logCount = await db.collection(collectionName).countDocuments();
     expect(logCount).toBe(LOG_VOLUME);

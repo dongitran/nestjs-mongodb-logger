@@ -33,4 +33,16 @@ export class AppController {
   stressTest() {
     return this.appService.runStressTest();
   }
+
+  @Post('stress-info')
+  async stressInfoTest(): Promise<string> {
+    const promises = [];
+    for (let i = 0; i < 500; i++) {
+      promises.push(
+        this.appService.logInfo(`Stress info log ${i}`, 'stress-info-logs'),
+      );
+    }
+    await Promise.all(promises);
+    return '500 info logs sent for stress test';
+  }
 }
