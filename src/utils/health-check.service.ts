@@ -56,8 +56,10 @@ export class HealthCheckService {
   }
 
   private evaluateBatchHealth(metrics: any): 'up' | 'degraded' {
-    const failureRate = metrics.totalFlushFailures / (metrics.totalBatchesFlushed || 1);
-    const memoryUsagePercent = (metrics.currentMemoryUsage / (100 * 1024 * 1024)) * 100;
+    const failureRate =
+      metrics.totalFlushFailures / (metrics.totalBatchesFlushed || 1);
+    const memoryUsagePercent =
+      (metrics.currentMemoryUsage / (100 * 1024 * 1024)) * 100;
 
     if (failureRate > 0.1 || memoryUsagePercent > 90) {
       return 'degraded';
