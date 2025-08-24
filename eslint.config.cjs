@@ -1,11 +1,11 @@
-import eslint from '@eslint/js';
-import tseslint from 'typescript-eslint';
-import prettier from 'eslint-plugin-prettier';
-import prettierConfig from 'eslint-config-prettier';
+const eslint = require('@eslint/js');
+const tseslint = require('typescript-eslint');
+const prettier = require('eslint-plugin-prettier');
+const prettierConfig = require('eslint-config-prettier');
 
-export default tseslint.config(
+module.exports = tseslint.config(
   {
-    ignores: ['dist', 'node_modules', '**/*.spec.ts', '**/*.test.ts', 'eslint.config.js'],
+    ignores: ['dist', 'node_modules', '**/*.spec.ts', '**/*.test.ts', 'eslint.config.cjs'],
   },
   eslint.configs.recommended,
   ...tseslint.configs.recommended,
@@ -25,3 +25,4 @@ export default tseslint.config(
     },
   },
 );
+
