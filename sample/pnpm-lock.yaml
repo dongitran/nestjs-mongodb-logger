@@ -21,8 +21,8 @@ importers:
         specifier: 11.1.6
         version: 11.1.6(@nestjs/common@11.1.6(class-transformer@0.5.1)(class-validator@0.14.2)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.6)
       nestjs-mongodb-logger:
-        specifier: ^1.0.4
-        version: 1.0.4(@nestjs/common@11.1.6(class-transformer@0.5.1)(class-validator@0.14.2)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.6)(mongodb@6.18.0)(reflect-metadata@0.2.2)(rxjs@7.8.2)
+        specifier: ^1.0.5
+        version: 1.0.5(@nestjs/common@11.1.6(class-transformer@0.5.1)(class-validator@0.14.2)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.6)(mongodb@6.18.0)(reflect-metadata@0.2.2)(rxjs@7.8.2)
       reflect-metadata:
         specifier: ^0.2.0
         version: 0.2.2
@@ -2238,8 +2238,8 @@ packages:
   neo-async@2.6.2:
     resolution: {integrity: sha512-Yd3UES5mWCSqR+qNT93S3UoYUkqAZ9lLg8a7g9rimsWmYGK8cVToA4/sF3RrshdyV3sAGMXVUmpMYOw+dLpOuw==}
 
-  nestjs-mongodb-logger@1.0.4:
-    resolution: {integrity: sha512-wQMrFaPQW0kMBoQFC3pt7Ds2E28l5muNWjrgJJ0mD7A2XiAts79UWqi1kGgcMa8XYj4Ris+5G7UMOQC1qt7m8A==}
+  nestjs-mongodb-logger@1.0.5:
+    resolution: {integrity: sha512-90iXajxXRYqVU6rqZP4hCZOMIOUs9185bdzMUNUEPwxq+xQldGMYA/Kezmp2S9kHn47s/WcW0rgjE9yviRlP6w==}
     peerDependencies:
       '@nestjs/common': 11.1.6
       '@nestjs/core': 11.1.6
@@ -5575,7 +5575,7 @@ snapshots:
 
   neo-async@2.6.2: {}
 
-  nestjs-mongodb-logger@1.0.4(@nestjs/common@11.1.6(class-transformer@0.5.1)(class-validator@0.14.2)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.6)(mongodb@6.18.0)(reflect-metadata@0.2.2)(rxjs@7.8.2):
+  nestjs-mongodb-logger@1.0.5(@nestjs/common@11.1.6(class-transformer@0.5.1)(class-validator@0.14.2)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.6)(mongodb@6.18.0)(reflect-metadata@0.2.2)(rxjs@7.8.2):
     dependencies:
       '@nestjs/common': 11.1.6(class-transformer@0.5.1)(class-validator@0.14.2)(reflect-metadata@0.2.2)(rxjs@7.8.2)
       '@nestjs/core': 11.1.6(@nestjs/common@11.1.6(class-transformer@0.5.1)(class-validator@0.14.2)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/platform-express@11.1.6)(reflect-metadata@0.2.2)(rxjs@7.8.2)

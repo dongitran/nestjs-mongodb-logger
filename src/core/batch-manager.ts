@@ -3,6 +3,7 @@ import { MongoLoggerConfig } from '../interfaces/mongo-logger-config.interface';
 import { LogEntry, BatchLogEntry } from '../interfaces/log-entry.interface';
 import { ConnectionManager } from './connection-manager';
 import { v4 as uuidv4 } from 'uuid';
+import { inspect } from 'util';
 
 const MONGO_LOGGER_CONFIG = 'MONGO_LOGGER_CONFIG';
 
@@ -223,7 +224,7 @@ export class BatchManager implements OnModuleDestroy {
           originalLog: log,
           errorDetails: {
             message: 'Max retries reached for temporary error',
-            error: error instanceof Error ? error.message : String(error),
+            error: inspect(error),
           },
           failedAt: new Date(),
           sourceCollection: collectionName,

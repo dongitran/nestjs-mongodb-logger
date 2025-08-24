@@ -1,16 +1,11 @@
-import { Injectable, Inject, OnModuleDestroy } from '@nestjs/common';
-import { MongoLoggerConfig } from '../interfaces/mongo-logger-config.interface';
+import { Injectable, OnModuleDestroy } from '@nestjs/common';
 import { LogEntry } from '../interfaces/log-entry.interface';
 import { BatchManager } from './batch-manager';
-
-const MONGO_LOGGER_CONFIG = 'MONGO_LOGGER_CONFIG';
+import { inspect } from 'util';
 
 @Injectable()
 export class MongoLoggerService implements OnModuleDestroy {
-  constructor(
-    @Inject(MONGO_LOGGER_CONFIG) private readonly config: MongoLoggerConfig,
-    private readonly batchManager: BatchManager,
-  ) {}
+  constructor(private readonly batchManager: BatchManager) {}
 
   async log(
     collection: string,
@@ -36,7 +31,7 @@ export class MongoLoggerService implements OnModuleDestroy {
       logEntry = {
         timestamp: new Date(),
         level: 'error',
-        message: error.message,
+        message: error.message || 'Error object without a message',
         stack: error.stack,
         metadata,
         collection,
@@ -46,7 +41,7 @@ export class MongoLoggerService implements OnModuleDestroy {
         timestamp: new Date(),
         level: 'error',
         message: 'An unknown error occurred',
-        errorDetails: String(error),
+        errorDetails: inspect(error),
         metadata,
         collection,
       };

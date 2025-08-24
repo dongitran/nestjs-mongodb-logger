@@ -9,6 +9,7 @@ import { tap, catchError } from 'rxjs/operators';
 import { Reflector } from '@nestjs/core';
 import { MongoLoggerService } from '../core/mongo-logger.service';
 import { LOG_METADATA_KEY, LogDecoratorOptions } from './log.decorator';
+import { inspect } from 'util';
 
 @Injectable()
 export class LogInterceptor implements NestInterceptor {
@@ -76,14 +77,7 @@ export class LogInterceptor implements NestInterceptor {
           status: 'error',
           duration: endTime - startTime,
           endTime: new Date(endTime),
-          error:
-            error instanceof Error
-              ? {
-                  message: error.message,
-                  stack: error.stack,
-                  name: error.name,
-                }
-              : { details: String(error) },
+          error: this.formatError(error),
         };
 
         this.mongoLogger.log(logOptions.collection || 'method-logs', logData);
@@ -122,5 +116,16 @@ export class LogInterceptor implements NestInterceptor {
     }
 
     return sanitized;
+  }
+
+  private formatError(error: unknown): Record<string, unknown> {
+    if (error instanceof Error) {
+      return {
+        message: error.message,
+        stack: error.stack,
+        name: error.name,
+      };
+    }
+    return { details: inspect(error) };
   }
 }
