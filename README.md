@@ -23,7 +23,7 @@ graph TD
 ## 📦 Installation
 
 ```bash
-pnpm install nestjs-mongodb-logger-core
+pnpm install nestjs-mongodb-logger
 ```
 
 ## 🚀 Quick Start
@@ -33,7 +33,7 @@ pnpm install nestjs-mongodb-logger-core
 ```typescript
 // app.module.ts
 import { Module } from '@nestjs/common';
-import { MongoLoggerModule } from 'nestjs-mongodb-logger-core';
+import { MongoLoggerModule } from 'nestjs-mongodb-logger';
 
 @Module({
   imports: [
@@ -53,7 +53,7 @@ export class AppModule {}
 ```typescript
 // any.service.ts
 import { Injectable } from '@nestjs/common';
-import { MongoLoggerService } from 'nestjs-mongodb-logger-core';
+import { MongoLoggerService } from 'nestjs-mongodb-logger';
 
 @Injectable()
 export class MyService {
@@ -80,7 +80,7 @@ Use `forRootAsync` to configure the module with environment variables.
 ```typescript
 // app.module.ts
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { MongoLoggerModule } from 'nestjs-mongodb-logger-core';
+import { MongoLoggerModule } from 'nestjs-mongodb-logger';
 
 @Module({
   imports: [
