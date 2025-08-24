@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { MongoLoggerService } from 'nestjs-mongodb-logger-core';
+import { MongoLoggerService } from 'nestjs-mongodb-logger';
 
 @Injectable()
 export class AppService {

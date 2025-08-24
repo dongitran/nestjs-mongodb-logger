@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { MongoLoggerModule } from 'nestjs-mongodb-logger-core';
+import { MongoLoggerModule } from 'nestjs-mongodb-logger';
 
 @Module({
   imports: [

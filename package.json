@@ -1,5 +1,5 @@
 {
-  "name": "nestjs-mongodb-logger-core",
+  "name": "nestjs-mongodb-logger",
   "version": "1.0.2",
   "description": "Production-ready MongoDB logging package for NestJS with optimized batch processing",
   "main": "dist/index.js",
@@ -32,12 +32,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/your-username/nestjs-mongodb-logger.git"
+    "url": "https://github.com/dongitran/nestjs-mongodb-logger.git"
   },
   "bugs": {
-    "url": "https://github.com/your-username/nestjs-mongodb-logger/issues"
+    "url": "https://github.com/dongitran/nestjs-mongodb-logger/issues"
   },
-  "homepage": "https://github.com/your-username/nestjs-mongodb-logger#readme",
+  "homepage": "https://github.com/dongitran/nestjs-mongodb-logger#readme",
   "packageManager": "pnpm@10.13.1",
   "peerDependencies": {
     "@nestjs/common": "^10.0.0",
