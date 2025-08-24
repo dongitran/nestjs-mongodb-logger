@@ -2,6 +2,8 @@
 
 A production-ready MongoDB logging package for NestJS applications, featuring optimized batch processing and robust connection management.
 
+[![CI](https://github.com/dongitran/nestjs-mongodb-logger/actions/workflows/ci.yml/badge.svg)](https://github.com/dongitran/nestjs-mongodb-logger/actions/workflows/ci.yml)
+
 ## ✨ Features
 
 - **🔌 Reliable Connection**: Auto-reconnects with exponential backoff and connection pooling.
