@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.7] - 2025-08-24
+
+### Fixed
+
+- **Module Format**: Removed `"type": "module"` from `package.json` to resolve `exports is not defined` error. The package is now correctly published as a CommonJS module, ensuring compatibility with standard NestJS projects.
+
 ## [1.0.6] - 2025-08-24
 
 ### Fixed
