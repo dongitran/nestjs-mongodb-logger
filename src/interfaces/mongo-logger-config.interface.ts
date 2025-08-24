@@ -12,6 +12,7 @@ export interface MongoLoggerConfig {
   enableMetrics?: boolean;
   logLevel?: 'error' | 'warn' | 'info';
   gracefulShutdownTimeout?: number;
+  maxRetries?: number;
 }
 
 import { ModuleMetadata } from '@nestjs/common';

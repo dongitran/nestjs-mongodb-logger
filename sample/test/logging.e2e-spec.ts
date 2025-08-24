@@ -25,12 +25,12 @@ describe('Logging (e2e)', () => {
     }
     mongoClient = new MongoClient(mongoUri);
     await mongoClient.connect();
-  });
+  }, 30000);
 
   afterAll(async () => {
     await mongoClient.close();
     await app.close();
-  });
+  }, 30000);
 
   const waitForLogs = (ms: number) =>
     new Promise((resolve) => setTimeout(resolve, ms));

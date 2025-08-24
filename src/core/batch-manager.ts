@@ -33,6 +33,8 @@ export class BatchManager implements OnModuleDestroy {
   private readonly batchSize: number;
   private readonly flushInterval: number;
   private readonly maxMemoryUsage: number;
+  private readonly maxRetries: number;
+  private readonly retries = new Map<string, number>();
 
   private metrics: BatchMetrics = {
     totalEntriesProcessed: 0,
@@ -52,6 +54,7 @@ export class BatchManager implements OnModuleDestroy {
     this.batchSize = config.batchSize || 500;
     this.flushInterval = config.flushInterval || 5000;
     this.maxMemoryUsage = (config.maxMemoryUsage || 100) * 1024 * 1024;
+    this.maxRetries = config.maxRetries || 3;
 
     this.startFlushTimer();
   }
@@ -171,41 +174,78 @@ export class BatchManager implements OnModuleDestroy {
       this.metrics.totalBatchesFlushed++;
       this.metrics.lastFlushTime = new Date();
       this.logger.debug(`Flushed ${batchSize} entries to ${collectionName}`);
+      this.retries.delete(collectionName);
     } catch (error) {
       this.metrics.totalFlushFailures++;
-      this.logger.error(`Failed to flush batch to ${collectionName}`, error);
-      await this.handleBatchError(collectionName, entries);
+      await this.handleFlushError(collectionName, entries, error);
     }
   }
 
-  private async handleBatchError(
+  private async handleFlushError(
     collectionName: string,
-    entries: BatchLogEntry[],
+    batch: BatchLogEntry[],
+    error: any,
   ): Promise<void> {
-    const maxRetries = 3;
-    const retryableEntries = entries.filter(
-      entry => (entry._retryCount || 0) < maxRetries,
-    );
+    this.logger.error(`Failed to flush batch to ${collectionName}`, error);
 
-    if (retryableEntries.length > 0) {
-      this.metrics.totalRetries += retryableEntries.length;
-      setTimeout(
-        async () => {
-          for (const entry of retryableEntries) {
-            entry._retryCount = (entry._retryCount || 0) + 1;
-            await this.addToBatch(entry);
-          }
-        },
-        1000 * Math.pow(2, retryableEntries[0]._retryCount || 0),
-      );
+    if (error?.name === 'BulkWriteError' && error?.writeErrors) {
+      const failedIndexes = new Set(error.writeErrors.map((e: any) => e.index));
+      const dlqEntries = batch
+        .filter((_, index) => failedIndexes.has(index))
+        .map(failedLog => ({
+          originalLog: failedLog,
+          errorDetails: {
+            message: 'Bulk write operation failed for this log entry.',
+          },
+          failedAt: new Date(),
+          sourceCollection: collectionName,
+        }));
+
+      if (dlqEntries.length > 0) {
+        await this.sendToDlq(collectionName, dlqEntries);
+      }
+    } else {
+      const currentRetries = this.retries.get(collectionName) || 0;
+      if (currentRetries < this.maxRetries) {
+        this.retries.set(collectionName, currentRetries + 1);
+        this.metrics.totalRetries++; // Increment the global retry metric
+        const existingBuffer = this.batches.get(collectionName)?.entries || [];
+        this.batches.get(collectionName)!.entries =
+          batch.concat(existingBuffer);
+        this.logger.warn(
+          `Retrying flush for ${collectionName}. Attempt ${currentRetries + 1}`,
+        );
+      } else {
+        this.logger.error(
+          `Max retries reached for ${collectionName}. Moving batch to DLQ.`,
+        );
+        const dlqEntries = batch.map(log => ({
+          originalLog: log,
+          errorDetails: {
+            message: 'Max retries reached for temporary error',
+            error: error.message,
+          },
+          failedAt: new Date(),
+          sourceCollection: collectionName,
+        }));
+        await this.sendToDlq(collectionName, dlqEntries);
+        this.retries.delete(collectionName);
+      }
     }
+  }
 
-    const failedEntries = entries.filter(
-      entry => (entry._retryCount || 0) >= maxRetries,
-    );
-    if (failedEntries.length > 0) {
+  private async sendToDlq(
+    collectionName: string,
+    dlqEntries: object[],
+  ): Promise<void> {
+    try {
+      const db = await this.connectionManager.getDatabase();
+      const dlqCollection = db.collection(`${collectionName}_dlq`);
+      await dlqCollection.insertMany(dlqEntries, { ordered: false });
+    } catch (dlqError) {
       this.logger.error(
-        `${failedEntries.length} entries permanently failed for ${collectionName}`,
+        `CRITICAL: Failed to write to DLQ for ${collectionName}`,
+        dlqError,
       );
     }
   }

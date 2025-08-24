@@ -35,39 +35,4 @@ export class ConfigFactory {
     const envConfig = ConfigValidator.getEnvironmentConfig();
     return this.createConfig(envConfig);
   }
-
-  static createForTesting(
-    overrides: Partial<MongoLoggerConfig> = {},
-  ): MongoLoggerConfig {
-    const testConfig: Partial<MongoLoggerConfig> = {
-      uri: 'mongodb://localhost:27017/test-logs',
-      batchSize: 10,
-      flushInterval: 100,
-      maxMemoryUsage: 5,
-      retryAttempts: 1,
-      enableMetrics: false,
-      logLevel: 'error',
-      ...overrides,
-    };
-
-    return ConfigValidator.validate(testConfig as MongoLoggerConfig);
-  }
-
-  static createForProduction(
-    uri: string,
-    overrides: Partial<MongoLoggerConfig> = {},
-  ): MongoLoggerConfig {
-    const prodConfig: Partial<MongoLoggerConfig> = {
-      uri,
-      batchSize: 1000,
-      flushInterval: 10000,
-      maxMemoryUsage: 200,
-      retryAttempts: 5,
-      enableMetrics: true,
-      logLevel: 'error',
-      ...overrides,
-    };
-
-    return ConfigValidator.validate(prodConfig as MongoLoggerConfig);
-  }
 }

@@ -22,7 +22,7 @@ describe('BatchManager', () => {
       insertMany: jest.fn().mockResolvedValue({}),
       insertOne: jest.fn().mockResolvedValue({}),
     }),
-  };
+  } as any; // Cast to any to satisfy TypeScript in mock environment
 
   beforeEach(async () => {
     const mockConnectionManager = {
@@ -77,9 +77,21 @@ describe('BatchManager', () => {
 
     it('should flush when batch size is reached', async () => {
       const logEntries: LogEntry[] = [
-        { timestamp: new Date(), message: 'Message 1', collection: 'test-logs' },
-        { timestamp: new Date(), message: 'Message 2', collection: 'test-logs' },
-        { timestamp: new Date(), message: 'Message 3', collection: 'test-logs' },
+        {
+          timestamp: new Date(),
+          message: 'Message 1',
+          collection: 'test-logs',
+        },
+        {
+          timestamp: new Date(),
+          message: 'Message 2',
+          collection: 'test-logs',
+        },
+        {
+          timestamp: new Date(),
+          message: 'Message 3',
+          collection: 'test-logs',
+        },
       ];
 
       for (const entry of logEntries) {
@@ -142,7 +154,9 @@ describe('BatchManager', () => {
 
   describe('error handling', () => {
     it('should handle database connection errors', async () => {
-      connectionManager.getDatabase.mockRejectedValueOnce(new Error('Connection failed'));
+      connectionManager.getDatabase.mockRejectedValueOnce(
+        new Error('Connection failed'),
+      );
 
       const logEntry: LogEntry = {
         timestamp: new Date(),
@@ -158,7 +172,16 @@ describe('BatchManager', () => {
     });
 
     it('should retry failed batches', async () => {
-      mockDb.collection().insertMany.mockRejectedValueOnce(new Error('Insert failed'));
+      const insertManyMock = mockDb.collection().insertMany;
+      insertManyMock.mockClear(); // Reset the mock
+
+      // First call fails with a retriable error, second call succeeds
+      insertManyMock
+        .mockRejectedValueOnce({ name: 'MongoTransientTransactionError' })
+        .mockResolvedValueOnce({});
+
+      // Ensure getDatabase mock is clean for this test
+      connectionManager.getDatabase.mockResolvedValue(mockDb);
 
       const logEntry: LogEntry = {
         timestamp: new Date(),
@@ -167,10 +190,15 @@ describe('BatchManager', () => {
       };
 
       await batchManager.addToBatch(logEntry);
-      await batchManager.flushAll();
+      await batchManager.flushAll(); // First flush attempt, fails and schedules retry
+
+      // We need to wait for the retry logic to execute
+      await new Promise(resolve => setTimeout(resolve, 200)); // Wait for retry delay
+      await batchManager.flushAll(); // Second flush attempt, should succeed
 
       const metrics = batchManager.getMetrics();
-      expect(metrics.totalRetries).toBeGreaterThan(0);
+      expect(insertManyMock).toHaveBeenCalledTimes(2);
+      expect(metrics.totalRetries).toBe(1);
     });
   });
 });
