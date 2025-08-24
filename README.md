@@ -10,17 +10,17 @@ A production-ready MongoDB logging package for NestJS applications, featuring op
 - **🩺 Health Monitoring**: Includes a `HealthCheckService` to monitor the connection and batch processing status.
 - **🕵️ Automatic Logging**: Provides a `LogInterceptor` to automatically log method calls, arguments, and results.
 
-## � Data Flow
+## 📊 Data Flow
 
 ```mermaid
 graph TD
-    A[Your Application] -->|Calls logger.log()| B(MongoLoggerService);
-    B -->|Adds to queue| C{BatchManager};
-    C -->|Flushes batch (on size/time)| D[ConnectionManager];
-    D -->|Writes to DB| E((MongoDB));
+    A[Your Application] -->|"Calls logger.log()"| B(MongoLoggerService);
+    B -->|"Adds to queue"| C{BatchManager};
+    C -->|"Flushes batch (on size/time)"| D[ConnectionManager];
+    D -->|"Writes to DB"| E((MongoDB));
 ```
 
-## �📦 Installation
+## 📦 Installation
 
 ```bash
 pnpm install nestjs-mongodb-logger-core
@@ -104,3 +104,4 @@ dongtran ✨
 ---
 
 Made with ❤️ to make your work life easier!
+
