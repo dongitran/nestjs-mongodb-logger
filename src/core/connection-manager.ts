@@ -4,6 +4,12 @@ import { MongoLoggerConfig } from '../interfaces/mongo-logger-config.interface';
 
 const MONGO_LOGGER_CONFIG = 'MONGO_LOGGER_CONFIG';
 
+enum CircuitBreakerState {
+  CLOSED,
+  OPEN,
+  HALF_OPEN,
+}
+
 enum ConnectionStatus {
   DISCONNECTED,
   CONNECTING,
@@ -17,7 +23,12 @@ export class ConnectionManager implements OnModuleDestroy {
   private client: MongoClient | null = null;
   private db: Db | null = null;
   private status = ConnectionStatus.DISCONNECTED;
-  private reconnectAttempts = 0;
+
+  private circuitState = CircuitBreakerState.CLOSED;
+  private failureCount = 0;
+  private lastFailureTime: number | null = null;
+  private readonly failureThreshold = 5;
+  private readonly openDuration = 30000;
 
   private metrics = {
     connectionSuccesses: 0,
@@ -31,7 +42,22 @@ export class ConnectionManager implements OnModuleDestroy {
     @Inject(MONGO_LOGGER_CONFIG) private readonly config: MongoLoggerConfig,
   ) {}
 
+  public isCircuitOpen(): boolean {
+    return this.circuitState === CircuitBreakerState.OPEN;
+  }
+
   async getDatabase(): Promise<Db> {
+    if (this.circuitState === CircuitBreakerState.OPEN) {
+      if (Date.now() - (this.lastFailureTime || 0) > this.openDuration) {
+        this.logger.warn(
+          'Circuit Breaker is now HALF-OPEN. Permitting a trial connection.',
+        );
+        this.circuitState = CircuitBreakerState.HALF_OPEN;
+      } else {
+        throw new Error('Circuit Breaker is open. Database is unavailable.');
+      }
+    }
+
     if (this.db && this.status === ConnectionStatus.CONNECTED) {
       return this.db;
     }
@@ -96,19 +122,42 @@ export class ConnectionManager implements OnModuleDestroy {
       this.db = this.client.db(dbName);
 
       this.setupEventHandlers();
-      this.reconnectAttempts = 0;
-      this.status = ConnectionStatus.CONNECTED;
-
-      this.metrics.connectionSuccesses++;
-      this.metrics.lastConnectionTime = new Date();
-
-      this.logger.log('Successfully connected to MongoDB');
+      this.handleConnectionSuccess();
       return this.db;
     } catch (error) {
-      this.status = ConnectionStatus.DISCONNECTED;
-      this.metrics.connectionFailures++;
-      this.logger.error('Failed to connect to MongoDB', error);
+      this.handleConnectionFailure(error);
       throw error;
+    }
+  }
+
+  private handleConnectionSuccess(): void {
+    this.logger.log('Connection successful. Circuit Breaker is CLOSED.');
+    this.circuitState = CircuitBreakerState.CLOSED;
+    this.failureCount = 0;
+    this.lastFailureTime = null;
+    this.status = ConnectionStatus.CONNECTED;
+    this.metrics.connectionSuccesses++;
+    this.metrics.lastConnectionTime = new Date();
+  }
+
+  private handleConnectionFailure(error: unknown): void {
+    this.failureCount++;
+    this.lastFailureTime = Date.now();
+    this.status = ConnectionStatus.DISCONNECTED;
+    this.metrics.connectionFailures++;
+    this.logger.error(
+      `Connection failed (Attempt ${this.failureCount}/${this.failureThreshold})`,
+      error,
+    );
+
+    if (this.circuitState === CircuitBreakerState.HALF_OPEN) {
+      this.logger.error(
+        'Trial connection failed. Circuit Breaker is OPEN again.',
+      );
+      this.circuitState = CircuitBreakerState.OPEN;
+    } else if (this.failureCount >= this.failureThreshold) {
+      this.logger.error('Failure threshold reached. Opening Circuit Breaker.');
+      this.circuitState = CircuitBreakerState.OPEN;
     }
   }
 
@@ -147,31 +196,9 @@ export class ConnectionManager implements OnModuleDestroy {
   }
 
   private async handleReconnection(): Promise<void> {
-    if (this.status !== ConnectionStatus.DISCONNECTED) return;
-
-    const baseDelay = this.config.retryDelay || 1000;
-
-    this.status = ConnectionStatus.RECONNECTING;
-    this.reconnectAttempts++;
-    this.metrics.reconnects++;
-    const exponentialDelay =
-      baseDelay * Math.pow(2, this.reconnectAttempts - 1);
-    const delay = Math.min(exponentialDelay, 30000); // Cap delay at 30 seconds
-
-    this.logger.log(
-      `Attempting reconnection ${this.reconnectAttempts} in ${delay}ms`,
+    this.logger.warn(
+      'Connection lost. Circuit Breaker will manage reconnection attempts.',
     );
-
-    setTimeout(async () => {
-      try {
-        await this.connect();
-      } catch (error) {
-        this.logger.error('Reconnection failed', error);
-        this.status = ConnectionStatus.DISCONNECTED;
-        // Continue retrying indefinitely
-        this.handleReconnection();
-      }
-    }, delay);
   }
 
   private extractDatabaseName(uri: string): string {

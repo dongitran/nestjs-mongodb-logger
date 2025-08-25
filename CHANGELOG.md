@@ -1,3 +1,9 @@
+## [1.0.9] - 2025-08-25
+
+### Added
+- Implemented Circuit Breaker pattern for robust connection handling.
+
+
 # Changelog
 
 All notable changes to this project will be documented in this file.

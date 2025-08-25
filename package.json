@@ -1,6 +1,6 @@
 {
   "name": "nestjs-mongodb-logger",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "description": "Production-ready MongoDB logging package for NestJS with optimized batch processing",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

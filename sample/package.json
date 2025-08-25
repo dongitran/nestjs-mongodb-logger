@@ -24,7 +24,7 @@
     "@nestjs/config": "^4.0.2",
     "@nestjs/core": "11.1.6",
     "@nestjs/platform-express": "11.1.6",
-    "nestjs-mongodb-logger": "^1.0.8",
+    "nestjs-mongodb-logger": "^1.0.9",
     "reflect-metadata": "^0.2.0",
     "rxjs": "^7.8.1"
   },

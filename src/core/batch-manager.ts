@@ -148,6 +148,13 @@ export class BatchManager implements OnModuleDestroy {
   }
 
   private async flushCollection(collectionName: string): Promise<void> {
+    if (this.connectionManager.isCircuitOpen()) {
+      this.logger.warn(
+        `Skipping flush for ${collectionName}: Circuit Breaker is open.`,
+      );
+      return;
+    }
+
     if (this.flushingCollections.has(collectionName)) {
       this.logger.debug(`Flush for ${collectionName} already in progress.`);
       return;
@@ -195,12 +202,21 @@ export class BatchManager implements OnModuleDestroy {
   private async handleFlushError(
     collectionName: string,
     failedEntries: BatchLogEntry[],
-    error: any,
+    error: unknown,
   ): Promise<void> {
     this.logger.error(`Failed to flush batch to ${collectionName}`, error);
 
-    if (error?.name === 'BulkWriteError' && error?.writeErrors) {
-      const failedIndexes = new Set(error.writeErrors.map((e: any) => e.index));
+    const bulkError = error as {
+      name?: string;
+      writeErrors?: { index: number }[];
+    };
+    if (
+      bulkError.name === 'BulkWriteError' &&
+      Array.isArray(bulkError.writeErrors)
+    ) {
+      const failedIndexes = new Set(
+        bulkError.writeErrors.map((e: { index: number }) => e.index),
+      );
       const dlqEntries = failedEntries
         .filter((_, index) => failedIndexes.has(index))
         .map(failedLog => ({

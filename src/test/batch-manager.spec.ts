@@ -27,6 +27,7 @@ describe('BatchManager', () => {
     const mockConnectionManager = {
       getDatabase: jest.fn().mockResolvedValue(mockDb),
       isConnected: jest.fn().mockReturnValue(true),
+      isCircuitOpen: jest.fn().mockReturnValue(false),
       getMetrics: jest.fn().mockReturnValue({}),
       healthCheck: jest.fn().mockResolvedValue({ status: 'up' }),
     };
